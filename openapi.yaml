@@ -1,0 +1,114 @@
+openapi: 3.0.3
+info:
+  title: Document Management System API
+  description: API for uploading and managing documents with metadata
+  version: 1.0.0
+  contact:
+    name: Document Management System
+
+servers:
+  - url: http://localhost:8080
+    description: Local mock server
+
+paths:
+  /api/documents/upload-binary:
+    post:
+      summary: Upload a binary file
+      description: |
+        Uploads a binary file (e.g., PDF) to the document management system.
+        Returns a unique file identifier that can be used when creating a document.
+      operationId: uploadBinary
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+              description: The binary file data
+      responses:
+        '200':
+          description: File uploaded successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: Unique file identifier
+              example: "f8c3de3d-1fea-4d7c-a8b0-29f63c4c3454"
+        '400':
+          description: Bad request
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /api/documents:
+    post:
+      summary: Create a document
+      description: |
+        Creates a document record with metadata. The fileId must reference a previously uploaded file.
+      operationId: createDocument
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDocumentRequest'
+      responses:
+        '200':
+          description: Document created successfully
+        '400':
+          description: Bad request - validation error
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: Referenced file not found
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+
+components:
+  schemas:
+    CreateDocumentRequest:
+      type: object
+      required:
+        - name
+        - creationDate
+        - akte
+        - fileId
+      properties:
+        name:
+          type: string
+          description: Name of the document
+          example: "Invoice_2024_Q1.pdf"
+        creationDate:
+          type: string
+          format: date
+          description: Original creation date of the document (ISO 8601 format)
+          example: "2024-03-15"
+        akte:
+          type: string
+          description: Akte identifier - grouping key for related documents
+          example: "AKTE-2024-001"
+        fileId:
+          type: string
+          description: Reference to a previously uploaded file
+          example: "f8c3de3d-1fea-4d7c-a8b0-29f63c4c3454"
+        idempotencyKey:
+          type: string
+          description: If given in the request, duplicate requests with the same idempotency key will be ignored
